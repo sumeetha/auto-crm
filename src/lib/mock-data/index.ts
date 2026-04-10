@@ -21,3 +21,19 @@ export {
   type DealCopilotData,
   getDealCopilotData,
 } from "./deal-copilot";
+export {
+  type Campaign,
+  type CampaignChannel,
+  type CampaignSegment,
+  type CampaignStatus,
+  campaigns,
+  campaignSegments,
+} from "./campaigns";
+export {
+  type SocialMessage,
+  type SocialMessageSender,
+  type SocialPlatform,
+  type SocialThread,
+  type SocialThreadStatus,
+  socialThreads,
+} from "./social-inbox";

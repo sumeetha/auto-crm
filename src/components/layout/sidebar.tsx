@@ -10,7 +10,9 @@ import {
   UserCircle,
   Car,
   CalendarDays,
-  BotMessageSquare,
+  MessagesSquare,
+  Megaphone,
+  Share2,
   BarChart3,
   Settings,
   ChevronLeft,
@@ -33,7 +35,9 @@ const navGroups = [
   {
     label: "Customer engagement",
     items: [
-      { label: "Conversations", href: "/bdc", icon: BotMessageSquare },
+      { label: "Conversations", href: "/bdc", icon: MessagesSquare },
+      { label: "Campaigns", href: "/campaigns", icon: Megaphone },
+      { label: "Social", href: "/social", icon: Share2 },
     ],
   },
   {

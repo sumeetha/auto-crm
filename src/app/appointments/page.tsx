@@ -12,6 +12,13 @@ import { MultiSelectFilter } from "@/components/shared/multi-select-filter";
 import { SearchableFilterSelect } from "@/components/shared/searchable-filter-select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { appointments, users, type Appointment } from "@/lib/mock-data";
+import { cn } from "@/lib/utils";
+
+/**
+ * Prototype “me” for **this page only** — not global auth.
+ * Matches topbar avatar (Rob Johnson).
+ */
+const APPOINTMENTS_PAGE_CURRENT_USER_ID = "user-1";
 
 const TODAY = "2026-04-11";
 const TODAY_START = new Date(TODAY).getTime();
@@ -95,6 +102,7 @@ function applyApptFilters(
   types: string[],
   statuses: string[],
   assignedUserIds: string[],
+  myAppointmentsOnly: boolean,
   search: string,
   dateWindow: "today" | "week" | "month" | "all",
   tab: "today" | "upcoming",
@@ -104,11 +112,15 @@ function applyApptFilters(
     if (!inDateWindow(appt, dateWindow, tab)) return false;
     if (types.length > 0 && !types.includes(appt.type)) return false;
     if (statuses.length > 0 && !statuses.includes(appt.status)) return false;
-    if (
+    if (myAppointmentsOnly) {
+      if (appt.assignedUserId !== APPOINTMENTS_PAGE_CURRENT_USER_ID)
+        return false;
+    } else if (
       assignedUserIds.length > 0 &&
       !assignedUserIds.includes(appt.assignedUserId)
-    )
+    ) {
       return false;
+    }
     if (q) {
       const blob = `${appt.leadName} ${appt.vehicleOfInterest} ${appt.notes ?? ""}`.toLowerCase();
       if (!blob.includes(q)) return false;
@@ -183,6 +195,7 @@ export default function AppointmentsPage() {
   const [types, setTypes] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
+  const [myAppointmentsOnly, setMyAppointmentsOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [dateWindow, setDateWindow] = useState<"today" | "week" | "month" | "all">("all");
 
@@ -193,11 +206,12 @@ export default function AppointmentsPage() {
         types,
         statuses,
         assignedUserIds,
+        myAppointmentsOnly,
         search,
         dateWindow,
         "today",
       ),
-    [types, statuses, assignedUserIds, search, dateWindow],
+    [types, statuses, assignedUserIds, myAppointmentsOnly, search, dateWindow],
   );
 
   const upcomingFiltered = useMemo(
@@ -207,22 +221,23 @@ export default function AppointmentsPage() {
         types,
         statuses,
         assignedUserIds,
+        myAppointmentsOnly,
         search,
         dateWindow,
         "upcoming",
       ),
-    [types, statuses, assignedUserIds, search, dateWindow],
+    [types, statuses, assignedUserIds, myAppointmentsOnly, search, dateWindow],
   );
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
     if (types.length > 0) n++;
     if (statuses.length > 0) n++;
-    if (assignedUserIds.length > 0) n++;
+    if (!myAppointmentsOnly && assignedUserIds.length > 0) n++;
     if (dateWindow !== "all") n++;
     if (search.trim().length > 0) n++;
     return n;
-  }, [types, statuses, assignedUserIds, dateWindow, search]);
+  }, [types, statuses, assignedUserIds, myAppointmentsOnly, dateWindow, search]);
 
   const filterBar = (
     <CollapsibleFilterPanel activeCount={activeFilterCount}>
@@ -259,14 +274,25 @@ export default function AppointmentsPage() {
         />
       </FilterField>
       <FilterField label="Assigned">
-        <MultiSelectFilter
-          options={users.map((u) => ({ value: u.id, label: u.name }))}
-          value={assignedUserIds}
-          onChange={setAssignedUserIds}
-          emptyLabel="Anyone"
-          triggerClassName="min-w-[150px]"
-          aria-label="Filter by assignee"
-        />
+        <div
+          className={cn(
+            myAppointmentsOnly && "pointer-events-none opacity-50",
+          )}
+          title={
+            myAppointmentsOnly
+              ? "Turn off My appointments to filter by other assignees"
+              : undefined
+          }
+        >
+          <MultiSelectFilter
+            options={users.map((u) => ({ value: u.id, label: u.name }))}
+            value={assignedUserIds}
+            onChange={setAssignedUserIds}
+            emptyLabel="Anyone"
+            triggerClassName="min-w-[150px]"
+            aria-label="Filter by assignee"
+          />
+        </div>
       </FilterField>
       <FilterField label="Date window">
         <SearchableFilterSelect
@@ -309,10 +335,26 @@ export default function AppointmentsPage() {
               </p>
             </div>
           </div>
-          <TabsList>
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          </TabsList>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex cursor-pointer items-center gap-2 text-sm leading-none">
+              <input
+                type="checkbox"
+                checked={myAppointmentsOnly}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setMyAppointmentsOnly(on);
+                  if (on) setAssignedUserIds([]);
+                }}
+                className="size-4 shrink-0 rounded border-input accent-primary"
+                aria-label="Show only my appointments"
+              />
+              <span className="whitespace-nowrap text-foreground">My appointments</span>
+            </label>
+            <TabsList>
+              <TabsTrigger value="today">Today</TabsTrigger>
+              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         {filterBar}
