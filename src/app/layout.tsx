@@ -7,6 +7,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 export const metadata: Metadata = {
   title: "AutoCRM — AI-Powered Automotive CRM",
   description: "AI-native CRM layer for automotive dealerships",
+  icons: {
+    icon: "/brand/autocrm-logo.png",
+  },
 };
 
 export default function RootLayout({

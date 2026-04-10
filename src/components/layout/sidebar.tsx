@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,6 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
-  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -61,8 +61,15 @@ export function Sidebar() {
       )}
     >
       <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Sparkles className="h-4 w-4" />
+        <div className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg ring-1 ring-sidebar-border/60">
+          <Image
+            src="/brand/autocrm-logo.png"
+            alt="AutoCRM"
+            width={32}
+            height={32}
+            className="h-full w-full object-cover"
+            priority
+          />
         </div>
         {!collapsed && (
           <div className="flex flex-col">

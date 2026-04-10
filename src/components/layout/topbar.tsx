@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Bell, Sparkles, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,8 +14,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RooftopSwitcher } from "./rooftop-switcher";
+import { AskAiSheet } from "./ask-ai-sheet";
 
 export function Topbar() {
+  const [askAiOpen, setAskAiOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card px-6">
       <div className="flex items-center gap-4">
@@ -23,16 +27,17 @@ export function Topbar() {
 
       <div className="flex items-center gap-2">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          className="hidden gap-2 text-muted-foreground sm:flex"
+          className="gap-2 text-muted-foreground sm:px-3"
+          onClick={() => setAskAiOpen(true)}
+          aria-label="Open Ask AI"
         >
-          <Search className="h-4 w-4" />
-          <span className="text-sm">Search...</span>
-          <kbd className="pointer-events-none ml-2 inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            <span className="text-xs">⌘</span>K
-          </kbd>
+          <Sparkles className="h-4 w-4 text-violet-500" />
+          <span className="hidden text-sm sm:inline">Ask AI</span>
         </Button>
+        <AskAiSheet open={askAiOpen} onOpenChange={setAskAiOpen} />
 
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-4.5 w-4.5 text-muted-foreground" />
