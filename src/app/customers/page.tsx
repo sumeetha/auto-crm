@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FilterField } from "@/components/shared/page-filter-bar";
@@ -64,6 +65,7 @@ function matchesLtv(c: Customer, band: string): boolean {
 }
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [equitySel, setEquitySel] = useState<string[]>([]);
   const [serviceSel, setServiceSel] = useState<string[]>([]);
@@ -194,8 +196,23 @@ export default function CustomersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((c) => (
-              <TableRow key={c.id}>
+            {filtered.map((c) => {
+              const href = `/customers/${c.id}`;
+              const rowName = `${c.firstName} ${c.lastName}`;
+              return (
+              <TableRow
+                key={c.id}
+                className="cursor-pointer hover:bg-muted/50"
+                tabIndex={0}
+                aria-label={`View customer ${rowName}`}
+                onClick={() => router.push(href)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(href);
+                  }
+                }}
+              >
                 <TableCell className="font-medium">
                   {c.firstName} {c.lastName}
                 </TableCell>
@@ -244,7 +261,8 @@ export default function CustomersPage() {
                   )}
                 </TableCell>
               </TableRow>
-            ))}
+            );
+            })}
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">

@@ -3,6 +3,11 @@ export { type Vehicle, inventory } from "./inventory";
 export { type Lead, leads } from "./leads";
 export { type Deal, deals } from "./deals";
 export { type Customer, customers } from "./customers";
+export {
+  type CustomerTimelineEvent,
+  type CustomerTimelineEventKind,
+  getCustomerEngagementTimeline,
+} from "./customer-timeline";
 export { type Appointment, appointments } from "./appointments";
 export {
   type Message,

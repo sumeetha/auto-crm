@@ -33,7 +33,7 @@ const navGroups = [
   {
     label: "Customer engagement",
     items: [
-      { label: "BDC Command Center", href: "/bdc", icon: BotMessageSquare },
+      { label: "Conversations", href: "/bdc", icon: BotMessageSquare },
     ],
   },
   {

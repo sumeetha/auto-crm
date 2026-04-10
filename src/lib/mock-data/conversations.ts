@@ -24,6 +24,8 @@ export type ConversationSummary = {
 
 export type Conversation = {
   id: string;
+  /** When set, deep-links from customer profile → BDC (`?customerId=`). */
+  customerId?: string | null;
   leadId: string;
   leadName: string;
   channel: "sms" | "email" | "chat";
@@ -849,5 +851,113 @@ export const conversations: Conversation[] = [
     unreadCount: 0,
     lastMessageAt: "2026-04-12T16:45:00Z",
     createdAt: "2026-04-07T16:00:00Z",
+  },
+
+  // Returning customer — linked to cust-1 / lead-5 for BDC deep link from Customers
+  {
+    id: "conv-cust-1",
+    customerId: "cust-1",
+    leadId: "lead-5",
+    leadName: "David Thompson",
+    channel: "sms",
+    status: "closed",
+    assignedUserId: "user-1",
+    messages: [
+      {
+        id: "msg-dt-1",
+        sender: "customer",
+        senderName: "David Thompson",
+        content:
+          "Hey — traded my Civic last week. Just want to confirm my first payment date on the Accord.",
+        timestamp: "2026-04-08T18:00:00Z",
+      },
+      {
+        id: "msg-dt-2",
+        sender: "human-agent",
+        senderName: "Rob Johnson",
+        content:
+          "Hi David! Congrats again on the 2026 Accord Sport. First payment is due May 15 — you'll get Honda Financial's welcome packet by mail. Need anything else?",
+        timestamp: "2026-04-08T18:04:00Z",
+      },
+      {
+        id: "msg-dt-3",
+        sender: "customer",
+        senderName: "David Thompson",
+        content: "All set. Thanks Rob!",
+        timestamp: "2026-04-08T18:05:00Z",
+      },
+    ],
+    summary: {
+      aiSummary:
+        "Post-delivery SMS from returning customer David Thompson. Confirmed first payment timing on new Accord Sport; conversation closed satisfactorily.",
+      smartTags: ["returning-customer"],
+      leadScore: 95,
+      scoreFactors: [
+        "Recent purchase completed",
+        "High prior LTV",
+        "Low support burden",
+      ],
+      qualificationData: {
+        vehiclePreference: "2026 Honda Accord Sport",
+      },
+      suggestedActions: [
+        "Schedule 30-day check-in",
+        "Add to service retention campaign",
+      ],
+    },
+    unreadCount: 0,
+    lastMessageAt: "2026-04-08T18:05:00Z",
+    createdAt: "2026-04-08T18:00:00Z",
+  },
+
+  // Linked to cust-2 / lead-16
+  {
+    id: "conv-cust-2",
+    customerId: "cust-2",
+    leadId: "lead-16",
+    leadName: "Emily Watson",
+    channel: "email",
+    status: "human-active",
+    assignedUserId: "user-1",
+    messages: [
+      {
+        id: "msg-ew-1",
+        sender: "customer",
+        senderName: "Emily Watson",
+        content:
+          "Picking up the CR-V Hybrid Saturday — can you confirm the accessories we added (roof rails + all-weather mats) are on the we-owe?",
+        timestamp: "2026-04-06T14:10:00Z",
+      },
+      {
+        id: "msg-ew-2",
+        sender: "human-agent",
+        senderName: "Rob Johnson",
+        content:
+          "Emily — confirmed on the we-owe: roof rails and all-weather mats are in the deal jacket. See you Saturday at 10!",
+        timestamp: "2026-04-06T14:22:00Z",
+      },
+    ],
+    summary: {
+      aiSummary:
+        "Emily Watson (returning customer) finalizing CR-V Hybrid delivery; confirming accessories on we-owe before Saturday pickup.",
+      smartTags: ["returning-customer", "lease-expiring"],
+      leadScore: 97,
+      scoreFactors: [
+        "Repeat buyer",
+        "Clear purchase intent",
+        "Delivery scheduled",
+      ],
+      qualificationData: {
+        vehiclePreference: "2025 Honda CR-V Hybrid Sport Touring",
+        timeline: "Pickup Saturday",
+      },
+      suggestedActions: [
+        "Pre-stage accessories before delivery",
+        "Offer first service bundle at delivery",
+      ],
+    },
+    unreadCount: 1,
+    lastMessageAt: "2026-04-06T14:22:00Z",
+    createdAt: "2026-04-06T14:10:00Z",
   },
 ];

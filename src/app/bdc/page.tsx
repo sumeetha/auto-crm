@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { conversations, leads, inventory, users } from "@/lib/mock-data";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { conversations, customers, leads, inventory, users } from "@/lib/mock-data";
 import type { Conversation, Message } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -847,14 +848,33 @@ function LeadIntelligencePanel({
   );
 }
 
-// ── Main BDC Command Center Page ─────────────────────────────────
+// ── Conversations (inbox) ─────────────────────────────────────────
 
-export default function BDCCommandCenter() {
-  const [selectedConvId, setSelectedConvId] = useState(conversations[0]?.id || "");
+function BDCCommandCenterInner() {
+  const searchParams = useSearchParams();
+  const customerId = searchParams.get("customerId");
+
+  const [selectedConvId, setSelectedConvId] = useState(
+    () => conversations[0]?.id || "",
+  );
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [channels, setChannels] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (!customerId) return;
+    const match = conversations.find((c) => c.customerId === customerId);
+    if (match) {
+      setSelectedConvId(match.id);
+      setSearchQuery("");
+    } else {
+      const cust = customers.find((c) => c.id === customerId);
+      if (cust) {
+        setSearchQuery(`${cust.firstName} ${cust.lastName}`);
+      }
+    }
+  }, [customerId]);
 
   const tagOptions = useMemo(() => {
     const s = new Set<string>();
@@ -893,5 +913,19 @@ export default function BDCCommandCenter() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BDCCommandCenter() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full min-h-0 w-full items-center justify-center text-muted-foreground">
+          Loading inbox…
+        </div>
+      }
+    >
+      <BDCCommandCenterInner />
+    </Suspense>
   );
 }
