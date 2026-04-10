@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -27,7 +28,11 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { users, conversations } from "@/lib/mock-data";
+import { FilterField } from "@/components/shared/page-filter-bar";
+import { CollapsibleFilterPanel } from "@/components/shared/collapsible-filter-panel";
+import { MultiSelectFilter } from "@/components/shared/multi-select-filter";
+import { SearchableFilterSelect } from "@/components/shared/searchable-filter-select";
+import { users } from "@/lib/mock-data";
 
 const kpis = [
   {
@@ -104,6 +109,12 @@ const channelData = [
   { name: "Walk-in", value: 8, color: "#ddd6fe" },
 ];
 
+const PERIOD_OPTIONS = [
+  { value: "today", label: "Today" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+] as const;
+
 const recentAIConvos = [
   {
     id: 1,
@@ -143,14 +154,65 @@ const recentAIConvos = [
 ];
 
 export default function BDCManagerDashboard() {
+  const [period, setPeriod] = useState<string>("7d");
+  const [agentFilter, setAgentFilter] = useState<string[]>([]);
+
+  const filteredAgentPerformance = useMemo(
+    () =>
+      agentFilter.length === 0
+        ? agentPerformance
+        : agentPerformance.filter((a) => agentFilter.includes(a.userId)),
+    [agentFilter],
+  );
+
+  const periodLabel =
+    period === "today"
+      ? "Today"
+      : period === "30d"
+        ? "Last 30 days"
+        : "Last 7 days";
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (agentFilter.length > 0) n++;
+    if (period !== "7d") n++;
+    return n;
+  }, [agentFilter, period]);
+
   return (
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-xl font-bold">BDC Manager Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Monitor AI agent performance and team metrics
+          Monitor AI agent performance and team metrics · {periodLabel} (mock
+          window)
         </p>
       </div>
+
+      <CollapsibleFilterPanel activeCount={activeFilterCount}>
+        <FilterField label="Time window">
+          <SearchableFilterSelect
+            options={[...PERIOD_OPTIONS]}
+            value={period}
+            onChange={(v) => setPeriod(v ?? "7d")}
+            triggerClassName="min-w-[140px]"
+            aria-label="Time window"
+          />
+        </FilterField>
+        <FilterField label="Agent table">
+          <MultiSelectFilter
+            options={agentPerformance.flatMap((a) => {
+              const u = users.find((x) => x.id === a.userId);
+              return u ? [{ value: a.userId, label: u.name }] : [];
+            })}
+            value={agentFilter}
+            onChange={setAgentFilter}
+            emptyLabel="All agents"
+            triggerClassName="min-w-[180px]"
+            aria-label="Filter agent performance table"
+          />
+        </FilterField>
+      </CollapsibleFilterPanel>
 
       {/* KPI Row */}
       <div className="grid grid-cols-5 gap-4">
@@ -196,7 +258,7 @@ export default function BDCManagerDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {agentPerformance.map((agent) => {
+                {filteredAgentPerformance.map((agent) => {
                   const user = users.find((u) => u.id === agent.userId);
                   if (!user) return null;
                   return (

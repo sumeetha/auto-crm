@@ -1,18 +1,24 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 import { deals, leads, inventory, users } from "@/lib/mock-data";
 import type { Deal } from "@/lib/mock-data";
+import { FilterField } from "@/components/shared/page-filter-bar";
+import { CollapsibleFilterPanel } from "@/components/shared/collapsible-filter-panel";
+import { MultiSelectFilter } from "@/components/shared/multi-select-filter";
+import { SearchableFilterSelect } from "@/components/shared/searchable-filter-select";
 import {
   DollarSign,
   Car,
   ArrowRightLeft,
   Clock,
+  Search,
 } from "lucide-react";
 
 const STAGES = [
@@ -24,6 +30,13 @@ const STAGES = [
   { key: "f-and-i", label: "F&I" },
   { key: "sold", label: "Sold" },
   { key: "lost", label: "Lost" },
+] as const;
+
+const MIN_GROSS_OPTIONS = [
+  { value: "all", label: "Any" },
+  { value: "1000", label: "$1,000+" },
+  { value: "2000", label: "$2,000+" },
+  { value: "3000", label: "$3,000+" },
 ] as const;
 
 const STAGE_COLORS: Record<string, string> = {
@@ -131,21 +144,56 @@ function DealCard({ deal }: { deal: Deal }) {
 }
 
 export default function DealsPage() {
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [minGross, setMinGross] = useState<string>("all");
+
+  const filteredDeals = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return deals.filter((d) => {
+      if (
+        assignedUserIds.length > 0 &&
+        !assignedUserIds.includes(d.assignedUserId)
+      )
+        return false;
+      if (minGross !== "all") {
+        const min = Number(minGross);
+        if (d.totalGross < min) return false;
+      }
+      if (q) {
+        const lead = leads.find((l) => l.id === d.leadId);
+        const name = lead
+          ? `${lead.firstName} ${lead.lastName}`.toLowerCase()
+          : "";
+        if (!name.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [assignedUserIds, search, minGross]);
+
   const dealsByStage = useMemo(() => {
     const grouped: Record<string, Deal[]> = {};
     for (const stage of STAGES) {
-      grouped[stage.key] = deals.filter((d) => d.stage === stage.key);
+      grouped[stage.key] = filteredDeals.filter((d) => d.stage === stage.key);
     }
     return grouped;
-  }, []);
+  }, [filteredDeals]);
 
-  const totalDeals = deals.length;
-  const totalGross = deals.reduce((sum, d) => sum + d.totalGross, 0);
+  const totalDeals = filteredDeals.length;
+  const totalGross = filteredDeals.reduce((sum, d) => sum + d.totalGross, 0);
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (assignedUserIds.length > 0) n++;
+    if (minGross !== "all") n++;
+    if (search.trim().length > 0) n++;
+    return n;
+  }, [assignedUserIds, minGross, search]);
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-6 py-4 border-b shrink-0">
-        <div className="flex items-center justify-between">
+      <div className="px-6 py-4 border-b shrink-0 space-y-3">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-semibold tracking-tight">
               Deals Pipeline
@@ -156,18 +204,54 @@ export default function DealsPage() {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-xs text-muted-foreground">Total Deals</p>
+              <p className="text-xs text-muted-foreground">Showing</p>
               <p className="text-lg font-semibold">{totalDeals}</p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="text-right">
-              <p className="text-xs text-muted-foreground">Total Gross</p>
+              <p className="text-xs text-muted-foreground">Gross (filtered)</p>
               <p className="text-lg font-semibold text-emerald-600">
                 ${totalGross.toLocaleString()}
               </p>
             </div>
           </div>
         </div>
+        <CollapsibleFilterPanel
+          activeCount={activeFilterCount}
+          className="max-w-4xl"
+        >
+          <FilterField label="Assigned">
+            <MultiSelectFilter
+              options={users.map((u) => ({ value: u.id, label: u.name }))}
+              value={assignedUserIds}
+              onChange={setAssignedUserIds}
+              emptyLabel="Anyone"
+              triggerClassName="min-w-[160px]"
+              aria-label="Filter by assigned user"
+            />
+          </FilterField>
+          <FilterField label="Min total gross">
+            <SearchableFilterSelect
+              options={[...MIN_GROSS_OPTIONS]}
+              value={minGross}
+              onChange={(v) => setMinGross(v ?? "all")}
+              triggerClassName="min-w-[140px]"
+              aria-label="Minimum total gross"
+            />
+          </FilterField>
+          <FilterField label="Search" className="min-w-[200px] flex-1">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-8 pl-8"
+                placeholder="Customer name…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search deals by customer name"
+              />
+            </div>
+          </FilterField>
+        </CollapsibleFilterPanel>
       </div>
 
       <ScrollArea className="flex-1">

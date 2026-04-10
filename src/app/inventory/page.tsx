@@ -1,9 +1,14 @@
 "use client";
 
-import { Car, Package } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Car, Package, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { FilterField } from "@/components/shared/page-filter-bar";
+import { CollapsibleFilterPanel } from "@/components/shared/collapsible-filter-panel";
+import { MultiSelectFilter } from "@/components/shared/multi-select-filter";
 import { inventory, type Vehicle } from "@/lib/mock-data";
 
 const fmt = (v: number) =>
@@ -112,14 +117,75 @@ function VehicleGrid({ vehicles }: { vehicles: Vehicle[] }) {
   );
 }
 
-const newVehicles = inventory.filter((v) => v.condition === "new");
-const usedVehicles = inventory.filter((v) => v.condition === "used");
+function matchesDaysBucket(v: Vehicle, bucket: string): boolean {
+  if (bucket === "30") return v.daysOnLot <= 30;
+  if (bucket === "60") return v.daysOnLot > 30 && v.daysOnLot <= 60;
+  if (bucket === "60plus") return v.daysOnLot > 60;
+  return false;
+}
+
+function applyInventoryFilters(
+  list: Vehicle[],
+  stockStatuses: string[],
+  daysBuckets: string[],
+  search: string,
+): Vehicle[] {
+  const q = search.trim().toLowerCase();
+  return list.filter((v) => {
+    if (stockStatuses.length > 0 && !stockStatuses.includes(v.status))
+      return false;
+    if (
+      daysBuckets.length > 0 &&
+      !daysBuckets.some((b) => matchesDaysBucket(v, b))
+    )
+      return false;
+    if (q) {
+      const blob = `${v.stockNo} ${v.vin} ${v.year} ${v.make} ${v.model} ${v.trim}`.toLowerCase();
+      if (!blob.includes(q)) return false;
+    }
+    return true;
+  });
+}
 
 export default function InventoryPage() {
+  const [stockStatuses, setStockStatuses] = useState<string[]>([]);
+  const [daysBuckets, setDaysBuckets] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+
+  const newVehicles = useMemo(
+    () => inventory.filter((v) => v.condition === "new"),
+    [],
+  );
+  const usedVehicles = useMemo(
+    () => inventory.filter((v) => v.condition === "used"),
+    [],
+  );
+
+  const filteredAll = useMemo(
+    () => applyInventoryFilters(inventory, stockStatuses, daysBuckets, search),
+    [stockStatuses, daysBuckets, search],
+  );
+  const filteredNew = useMemo(
+    () => applyInventoryFilters(newVehicles, stockStatuses, daysBuckets, search),
+    [newVehicles, stockStatuses, daysBuckets, search],
+  );
+  const filteredUsed = useMemo(
+    () => applyInventoryFilters(usedVehicles, stockStatuses, daysBuckets, search),
+    [usedVehicles, stockStatuses, daysBuckets, search],
+  );
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (stockStatuses.length > 0) n++;
+    if (daysBuckets.length > 0) n++;
+    if (search.trim().length > 0) n++;
+    return n;
+  }, [stockStatuses, daysBuckets, search]);
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <Tabs defaultValue="all">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center rounded-lg bg-primary/10 p-2">
               <Package className="size-5 text-primary" />
@@ -127,7 +193,7 @@ export default function InventoryPage() {
             <div>
               <h1 className="text-xl font-semibold tracking-tight">Inventory</h1>
               <p className="text-sm text-muted-foreground">
-                {inventory.length} vehicles
+                {inventory.length} in stock · filters apply to the grid below
               </p>
             </div>
           </div>
@@ -138,14 +204,58 @@ export default function InventoryPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="all">
-          <VehicleGrid vehicles={inventory} />
+        <CollapsibleFilterPanel activeCount={activeFilterCount} className="mt-2">
+          <FilterField label="Stock status">
+            <MultiSelectFilter
+              options={[
+                { value: "available", label: "Available" },
+                { value: "in-transit", label: "In transit" },
+                { value: "hold", label: "Hold" },
+                { value: "sold", label: "Sold" },
+              ]}
+              value={stockStatuses}
+              onChange={setStockStatuses}
+              emptyLabel="All statuses"
+              triggerClassName="min-w-[140px]"
+              aria-label="Filter by stock status"
+            />
+          </FilterField>
+          <FilterField label="Days on lot">
+            <MultiSelectFilter
+              options={[
+                { value: "30", label: "≤ 30 days" },
+                { value: "60", label: "31 – 60 days" },
+                { value: "60plus", label: "60+ days" },
+              ]}
+              value={daysBuckets}
+              onChange={setDaysBuckets}
+              emptyLabel="Any"
+              triggerClassName="min-w-[140px]"
+              aria-label="Filter by days on lot"
+            />
+          </FilterField>
+          <FilterField label="Search" className="min-w-[200px] flex-1">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="h-8 pl-8"
+                placeholder="Stock, VIN, make, model…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search inventory"
+              />
+            </div>
+          </FilterField>
+        </CollapsibleFilterPanel>
+
+        <TabsContent value="all" className="mt-4">
+          <VehicleGrid vehicles={filteredAll} />
         </TabsContent>
-        <TabsContent value="new">
-          <VehicleGrid vehicles={newVehicles} />
+        <TabsContent value="new" className="mt-4">
+          <VehicleGrid vehicles={filteredNew} />
         </TabsContent>
-        <TabsContent value="used">
-          <VehicleGrid vehicles={usedVehicles} />
+        <TabsContent value="used" className="mt-4">
+          <VehicleGrid vehicles={filteredUsed} />
         </TabsContent>
       </Tabs>
     </div>

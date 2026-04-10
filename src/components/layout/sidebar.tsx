@@ -31,10 +31,9 @@ const navGroups = [
     ],
   },
   {
-    label: "AI Features",
+    label: "Customer engagement",
     items: [
       { label: "BDC Command Center", href: "/bdc", icon: BotMessageSquare },
-      { label: "In-deal Co-pilot", href: "/deals/deal-3", icon: Sparkles },
     ],
   },
   {
@@ -120,8 +119,10 @@ export function Sidebar() {
 
       <div className="border-t border-sidebar-border p-3">
         <button
+          type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="flex w-full items-center justify-center rounded-lg p-2 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="flex w-full items-center justify-end rounded-lg p-2 pr-2.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
         >
           <ChevronLeft
             className={cn(

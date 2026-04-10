@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, Search } from "lucide-react";
 import { leads, inventory, users } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table,
@@ -14,17 +16,15 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-
-const STATUS_COUNTS: Record<string, number> = {
-  all: 20,
-  new: 5,
-  contacted: 4,
-  qualified: 3,
-  "appointment-set": 3,
-  negotiating: 2,
-  sold: 2,
-  lost: 1,
-};
+import { FilterField } from "@/components/shared/page-filter-bar";
+import { MultiSelectFilter } from "@/components/shared/multi-select-filter";
+import { SearchableFilterSelect } from "@/components/shared/searchable-filter-select";
+import {
+  applyLeadFilters,
+  collectLeadSmartTags,
+  type LeadFilterCriteria,
+} from "@/lib/lead-filters";
+import { CollapsibleFilterPanel } from "@/components/shared/collapsible-filter-panel";
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
@@ -104,9 +104,26 @@ const TAB_ITEMS = [
   { value: "negotiating", label: "Negotiating" },
   { value: "sold", label: "Sold" },
   { value: "lost", label: "Lost" },
+] as const;
+
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: "website", label: "Website" },
+  { value: "cars.com", label: "Cars.com" },
+  { value: "autotrader", label: "Autotrader" },
+  { value: "walk-in", label: "Walk-in" },
+  { value: "phone", label: "Phone" },
+  { value: "referral", label: "Referral" },
+];
+
+const ACTIVITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "any", label: "Any time" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
 ];
 
 function LeadTableRows({ filteredLeads }: { filteredLeads: typeof leads }) {
+  const router = useRouter();
+
   if (filteredLeads.length === 0) {
     return (
       <TableRow>
@@ -116,15 +133,25 @@ function LeadTableRows({ filteredLeads }: { filteredLeads: typeof leads }) {
       </TableRow>
     );
   }
-  return filteredLeads.map((lead) => (
-    <TableRow key={lead.id} className="group cursor-pointer">
+  return filteredLeads.map((lead) => {
+    const href = `/leads/${lead.id}`;
+    const name = `${lead.firstName} ${lead.lastName}`;
+    return (
+    <TableRow
+      key={lead.id}
+      className="group cursor-pointer"
+      tabIndex={0}
+      aria-label={`View lead ${name}`}
+      onClick={() => router.push(href)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(href);
+        }
+      }}
+    >
       <TableCell>
-        <Link
-          href={`/leads/${lead.id}`}
-          className="font-medium text-foreground group-hover:underline"
-        >
-          {lead.firstName} {lead.lastName}
-        </Link>
+        <span className="font-medium text-foreground">{name}</span>
       </TableCell>
       <TableCell>
         <Badge variant="outline" className="capitalize">
@@ -163,13 +190,47 @@ function LeadTableRows({ filteredLeads }: { filteredLeads: typeof leads }) {
         {timeAgo(lead.lastActivityAt)}
       </TableCell>
     </TableRow>
-  ));
+    );
+  });
 }
 
 export default function LeadsPage() {
+  const [criteria, setCriteria] = useState<LeadFilterCriteria>({
+    sources: [],
+    assignedUserIds: [],
+    smartTags: [],
+    activity: "any",
+    search: "",
+  });
+
+  const smartTagOptions = useMemo(() => collectLeadSmartTags(leads), []);
+
+  const activeFilterDimensions = useMemo(() => {
+    let n = 0;
+    if (criteria.sources.length > 0) n++;
+    if (criteria.assignedUserIds.length > 0) n++;
+    if (criteria.smartTags.length > 0) n++;
+    if (criteria.activity !== "any") n++;
+    if (criteria.search.trim().length > 0) n++;
+    return n;
+  }, [criteria]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: leads.length };
+    for (const t of TAB_ITEMS) {
+      if (t.value === "all") continue;
+      counts[t.value] = leads.filter((l) => l.status === t.value).length;
+    }
+    return counts;
+  }, []);
+
+  const setField = <K extends keyof LeadFilterCriteria>(
+    key: K,
+    value: LeadFilterCriteria[K],
+  ) => setCriteria((c) => ({ ...c, [key]: value }));
+
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
@@ -183,24 +244,88 @@ export default function LeadsPage() {
         </Button>
       </div>
 
-      {/* Tabs + Table */}
+      <CollapsibleFilterPanel activeCount={activeFilterDimensions}>
+        <FilterField label="Source">
+          <MultiSelectFilter
+            options={SOURCE_OPTIONS}
+            value={criteria.sources}
+            onChange={(sources) => setField("sources", sources)}
+            emptyLabel="All sources"
+            triggerClassName="min-w-[140px] w-[min(100%,160px)]"
+            aria-label="Filter by lead source"
+          />
+        </FilterField>
+        <FilterField label="Assigned">
+          <MultiSelectFilter
+            options={users.map((u) => ({ value: u.id, label: u.name }))}
+            value={criteria.assignedUserIds}
+            onChange={(assignedUserIds) =>
+              setField("assignedUserIds", assignedUserIds)
+            }
+            emptyLabel="Anyone"
+            triggerClassName="min-w-[140px] w-[min(100%,180px)]"
+            aria-label="Filter by assigned user"
+          />
+        </FilterField>
+        <FilterField label="Tag">
+          <MultiSelectFilter
+            options={smartTagOptions.map((tag) => ({
+              value: tag,
+              label: formatLabel(tag),
+            }))}
+            value={criteria.smartTags}
+            onChange={(smartTags) => setField("smartTags", smartTags)}
+            emptyLabel="Any tag"
+            triggerClassName="min-w-[140px] w-[min(100%,180px)]"
+            aria-label="Filter by smart tag"
+          />
+        </FilterField>
+        <FilterField label="Activity">
+          <SearchableFilterSelect
+            options={ACTIVITY_OPTIONS}
+            value={criteria.activity}
+            onChange={(v) =>
+              setField(
+                "activity",
+                (v as LeadFilterCriteria["activity"]) || "any",
+              )
+            }
+            triggerClassName="min-w-[120px]"
+            aria-label="Filter by activity"
+          />
+        </FilterField>
+        <FilterField label="Search" className="min-w-[200px] flex-1">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-8 pl-8"
+              placeholder="Name, email, phone…"
+              value={criteria.search}
+              onChange={(e) => setField("search", e.target.value)}
+              aria-label="Search leads"
+            />
+          </div>
+        </FilterField>
+      </CollapsibleFilterPanel>
+
       <Tabs defaultValue="all">
         <TabsList variant="line" className="w-full justify-start gap-0">
           {TAB_ITEMS.map((t) => (
             <TabsTrigger key={t.value} value={t.value} className="px-3">
               {t.label}
               <span className="ml-1 text-xs text-muted-foreground">
-                ({STATUS_COUNTS[t.value]})
+                ({statusCounts[t.value] ?? 0})
               </span>
             </TabsTrigger>
           ))}
         </TabsList>
 
         {TAB_ITEMS.map((t) => {
-          const filtered =
+          const base =
             t.value === "all"
               ? leads
               : leads.filter((l) => l.status === t.value);
+          const filtered = applyLeadFilters(base, criteria);
           return (
             <TabsContent key={t.value} value={t.value}>
               <div className="rounded-lg border">

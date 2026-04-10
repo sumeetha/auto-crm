@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { conversations, leads, inventory, users } from "@/lib/mock-data";
 import type { Conversation, Message } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { MultiSelectFilter } from "@/components/shared/multi-select-filter";
+import { CollapsibleFilterPanel } from "@/components/shared/collapsible-filter-panel";
 import {
   Search,
   MessageSquare,
@@ -51,6 +53,20 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   "human-active": { label: "Human Active", color: "bg-blue-100 text-blue-700" },
   closed: { label: "Closed", color: "bg-slate-100 text-slate-500" },
 };
+
+const CHANNEL_OPTIONS = [
+  { value: "sms", label: "SMS" },
+  { value: "email", label: "Email" },
+  { value: "chat", label: "Chat" },
+] as const;
+
+const STATUS_FILTERS = [
+  { key: "ai-handling", label: "AI Handling" },
+  { key: "needs-review", label: "Needs Review" },
+  { key: "escalated", label: "Escalated" },
+  { key: "human-active", label: "Human Active" },
+  { key: "closed", label: "Closed" },
+] as const;
 
 const tagColors: Record<string, string> = {
   "hot-lead": "bg-red-100 text-red-700",
@@ -99,54 +115,148 @@ function ConversationList({
   conversations,
   selected,
   onSelect,
-  filter,
-  onFilterChange,
+  selectedStatuses,
+  onStatusesChange,
+  channels,
+  onChannelsChange,
+  tags,
+  onTagsChange,
+  searchQuery,
+  onSearchChange,
+  tagOptions,
 }: {
   conversations: Conversation[];
   selected: string;
   onSelect: (id: string) => void;
-  filter: string;
-  onFilterChange: (f: string) => void;
+  selectedStatuses: string[];
+  onStatusesChange: (next: string[]) => void;
+  channels: string[];
+  onChannelsChange: (next: string[]) => void;
+  tags: string[];
+  onTagsChange: (next: string[]) => void;
+  searchQuery: string;
+  onSearchChange: (s: string) => void;
+  tagOptions: string[];
 }) {
-  const filters = [
-    { key: "all", label: "All" },
-    { key: "ai-handling", label: "AI Handling" },
-    { key: "needs-review", label: "Needs Review" },
-    { key: "escalated", label: "Escalated" },
-    { key: "closed", label: "Closed" },
-  ];
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (channels.length > 0) n++;
+    if (tags.length > 0) n++;
+    if (selectedStatuses.length > 0) n++;
+    if (searchQuery.trim().length > 0) n++;
+    return n;
+  }, [channels, tags, selectedStatuses, searchQuery]);
 
-  const filtered =
-    filter === "all"
-      ? conversations
-      : conversations.filter((c) => c.status === filter);
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = conversations.filter((c) => {
+    if (selectedStatuses.length > 0 && !selectedStatuses.includes(c.status))
+      return false;
+    if (channels.length > 0 && !channels.includes(c.channel)) return false;
+    if (
+      tags.length > 0 &&
+      !c.summary.smartTags.some((t) => tags.includes(t))
+    )
+      return false;
+    if (q) {
+      const last = c.messages[c.messages.length - 1]?.content ?? "";
+      const blob = `${c.leadName} ${last}`.toLowerCase();
+      if (!blob.includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="flex h-full min-h-0 w-[300px] min-w-0 shrink-0 flex-col border-r bg-card">
-      <div className="shrink-0 border-b p-3">
+      <CollapsibleFilterPanel
+        variant="stack"
+        activeCount={activeFilterCount}
+        className="shrink-0 rounded-none border-0 border-b border-border bg-transparent shadow-none"
+        contentClassName="space-y-2 !py-2"
+      >
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search conversations..."
             className="pl-9 h-9 text-sm"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            aria-label="Search conversations"
           />
         </div>
-      </div>
-      <div className="flex min-w-0 shrink-0 gap-1 overflow-x-auto border-b px-3 py-2 overscroll-x-contain">
-        {filters.map((f) => (
+        <div className="flex gap-2">
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Channel
+            </p>
+            <MultiSelectFilter
+              options={[...CHANNEL_OPTIONS]}
+              value={channels}
+              onChange={onChannelsChange}
+              emptyLabel="All channels"
+              triggerClassName="text-xs"
+              aria-label="Filter by channel"
+            />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Smart tag
+            </p>
+            <MultiSelectFilter
+              options={tagOptions.map((tag) => ({
+                value: tag,
+                label: formatTag(tag),
+              }))}
+              value={tags}
+              onChange={onTagsChange}
+              emptyLabel="Any tag"
+              triggerClassName="text-xs"
+              aria-label="Filter by smart tag"
+            />
+          </div>
+        </div>
+      </CollapsibleFilterPanel>
+      <div className="shrink-0 space-y-1 border-b border-border bg-card px-3 py-2">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Status
+        </p>
+        <div className="flex min-w-0 gap-1 overflow-x-auto overscroll-x-contain">
           <button
-            key={f.key}
-            onClick={() => onFilterChange(f.key)}
+            type="button"
+            onClick={() => onStatusesChange([])}
             className={cn(
               "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
-              filter === f.key
+              selectedStatuses.length === 0
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
+                : "text-muted-foreground hover:bg-muted",
             )}
           >
-            {f.label}
+            All
           </button>
-        ))}
+          {STATUS_FILTERS.map((f) => {
+            const on = selectedStatuses.includes(f.key);
+            return (
+              <button
+                type="button"
+                key={f.key}
+                onClick={() => {
+                  if (on) {
+                    onStatusesChange(selectedStatuses.filter((x) => x !== f.key));
+                  } else {
+                    onStatusesChange([...selectedStatuses, f.key]);
+                  }
+                }}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  on
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <div className="divide-y">
@@ -741,7 +851,18 @@ function LeadIntelligencePanel({
 
 export default function BDCCommandCenter() {
   const [selectedConvId, setSelectedConvId] = useState(conversations[0]?.id || "");
-  const [filter, setFilter] = useState("all");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [channels, setChannels] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const tagOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const c of conversations) {
+      for (const t of c.summary.smartTags) s.add(t);
+    }
+    return [...s].sort();
+  }, []);
 
   const selectedConv = conversations.find((c) => c.id === selectedConvId);
 
@@ -751,8 +872,15 @@ export default function BDCCommandCenter() {
         conversations={conversations}
         selected={selectedConvId}
         onSelect={setSelectedConvId}
-        filter={filter}
-        onFilterChange={setFilter}
+        selectedStatuses={selectedStatuses}
+        onStatusesChange={setSelectedStatuses}
+        channels={channels}
+        onChannelsChange={setChannels}
+        tags={tags}
+        onTagsChange={setTags}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        tagOptions={tagOptions}
       />
       {selectedConv ? (
         <>
