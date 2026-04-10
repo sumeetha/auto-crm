@@ -34,6 +34,7 @@ const navGroups = [
     label: "AI Features",
     items: [
       { label: "BDC Command Center", href: "/bdc", icon: BotMessageSquare },
+      { label: "In-deal Co-pilot", href: "/deals/deal-3", icon: Sparkles },
     ],
   },
   {
@@ -82,10 +83,19 @@ export function Sidebar() {
             )}
             <ul className="space-y-0.5">
               {group.items.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" &&
-                    pathname.startsWith(item.href));
+                const allItems = navGroups.flatMap((g) => g.items);
+                const isActive = (() => {
+                  if (pathname === item.href) return true;
+                  if (item.href === "/dashboard") return false;
+                  if (!pathname.startsWith(item.href)) return false;
+                  const hasMoreSpecific = allItems.some(
+                    (other) =>
+                      other.href !== item.href &&
+                      other.href.length > item.href.length &&
+                      pathname.startsWith(other.href),
+                  );
+                  return !hasMoreSpecific;
+                })();
                 return (
                   <li key={item.href}>
                     <Link

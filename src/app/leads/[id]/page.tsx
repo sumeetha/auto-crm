@@ -243,7 +243,7 @@ export default function LeadDetailPage({
         <p className="text-muted-foreground">
           No lead exists with ID &ldquo;{id}&rdquo;.
         </p>
-        <Button variant="outline" render={<Link href="/leads" />}>
+        <Button variant="outline" nativeButton={false} render={<Link href="/leads" />}>
           <ArrowLeft className="size-4" />
           Back to Leads
         </Button>
@@ -263,7 +263,7 @@ export default function LeadDetailPage({
     <div className="flex flex-col gap-6 p-6">
       {/* Back nav */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon-sm" render={<Link href="/leads" />}>
+        <Button variant="ghost" size="icon-sm" nativeButton={false} render={<Link href="/leads" />}>
           <ArrowLeft className="size-4" />
         </Button>
         <div>

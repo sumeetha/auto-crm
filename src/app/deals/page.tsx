@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -74,6 +75,7 @@ function DealCard({ deal }: { deal: Deal }) {
   const showGross = deal.frontGross > 0 || deal.backGross > 0 || deal.totalGross > 0;
 
   return (
+    <Link href={`/deals/${deal.id}`} className="block">
     <Card className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
       <CardContent className="space-y-2.5">
         <div className="flex items-start justify-between gap-2">
@@ -124,6 +126,7 @@ function DealCard({ deal }: { deal: Deal }) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
 

@@ -10,3 +10,9 @@ export {
   type Conversation,
   conversations,
 } from "./conversations";
+export {
+  type FiBundleSuggestion,
+  type ObjectionPrompt,
+  type DealCopilotData,
+  getDealCopilotData,
+} from "./deal-copilot";
