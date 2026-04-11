@@ -37,3 +37,13 @@ export {
   type SocialThreadStatus,
   socialThreads,
 } from "./social-inbox";
+export {
+  type LeadWorkflow,
+  type LeadWorkflowStatus,
+  leadWorkflows,
+} from "./workflows";
+export {
+  type CustomAgent,
+  type CustomAgentStatus,
+  customAgents,
+} from "./agents";

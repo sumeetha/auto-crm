@@ -17,6 +17,8 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
+  GitBranch,
+  Bot,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -44,6 +46,8 @@ const navGroups = [
     label: "Admin",
     items: [
       { label: "Reports", href: "/reports", icon: BarChart3 },
+      { label: "Workflows", href: "/workflows", icon: GitBranch },
+      { label: "Agents", href: "/agents", icon: Bot },
       { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
