@@ -21,6 +21,11 @@ import {
   Bot,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const navGroups = [
   {
@@ -110,20 +115,58 @@ export function Sidebar() {
                   );
                   return !hasMoreSpecific;
                 })();
+                const linkClassName = cn(
+                  "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                  collapsed && "justify-center px-2",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                );
+
+                const linkBody = (
+                  <>
+                    <item.icon
+                      className={cn(
+                        "h-4.5 w-4.5 shrink-0",
+                        isActive && "text-primary",
+                      )}
+                    />
+                    {!collapsed && <span>{item.label}</span>}
+                  </>
+                );
+
                 return (
                   <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <item.icon className={cn("h-4.5 w-4.5 shrink-0", isActive && "text-primary")} />
-                      {!collapsed && <span>{item.label}</span>}
-                    </Link>
+                    {collapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger
+                          nativeButton={false}
+                          delay={200}
+                          render={(props) => {
+                            const { nativeButton: _nb, ...linkProps } = props;
+                            return (
+                              <Link
+                                {...linkProps}
+                                href={item.href}
+                                className={cn(
+                                  linkClassName,
+                                  linkProps.className,
+                                )}
+                              >
+                                {linkBody}
+                              </Link>
+                            );
+                          }}
+                        />
+                        <TooltipContent side="right" sideOffset={10}>
+                          {item.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Link href={item.href} className={linkClassName}>
+                        {linkBody}
+                      </Link>
+                    )}
                   </li>
                 );
               })}
