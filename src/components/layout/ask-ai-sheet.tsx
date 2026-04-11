@@ -75,8 +75,8 @@ function mockAssistantReplyNode(question: string): ReactNode {
         <p className="font-medium text-foreground">Side-by-side (mock CRM)</p>
         <div className="rounded-md border border-violet-100 bg-white/60 px-3 py-2 text-xs dark:border-violet-900/50 dark:bg-violet-950/20">
           <p className="mb-1">
-            <CrmLink href="/bdc">Conversations</CrmLink> — BDC-style threads (SMS /
-            email / chat), qualification, and handoff. Mock inbox:{" "}
+            <CrmLink href="/bdc">Conversations</CrmLink> — BDC-style threads (SMS,
+            email, chat, voice), qualification, and handoff. Mock inbox:{" "}
             <strong>{conversations.length}</strong> threads.
           </p>
           <p>
@@ -315,8 +315,8 @@ function mockAssistantReplyNode(question: string): ReactNode {
       <div className="space-y-2 text-xs">
         <p className="font-medium text-foreground">Campaigns in this demo</p>
         <p>
-          Segment and send mock SMS/email-style campaigns, with scheduling stubs
-          and compliance banner — see{" "}
+          Segment and send mock SMS, email, and voice campaigns, with scheduling
+          stubs and compliance banner — see{" "}
           <CrmLink href="/campaigns">Campaigns</CrmLink>. Pair with{" "}
           <CrmLink href="/customers">Customers</CrmLink> and{" "}
           <CrmLink href="/leads">Leads</CrmLink> for audiences.

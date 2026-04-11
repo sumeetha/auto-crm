@@ -6,7 +6,7 @@ export type CampaignStatus =
   | "paused"
   | "failed";
 
-export type CampaignChannel = "sms" | "email";
+export type CampaignChannel = "sms" | "email" | "voice";
 
 export type CampaignSegment = {
   id: string;
@@ -57,10 +57,14 @@ export type Campaign = {
   sentAt: string | null;
   metrics?: {
     delivered: number;
-    opened: number;
-    clicked: number;
-    replied: number;
-    bounced: number;
+    opened?: number;
+    clicked?: number;
+    replied?: number;
+    bounced?: number;
+    /** Voice campaign outcomes (mock). */
+    answered?: number;
+    voicemail?: number;
+    failed?: number;
   };
 };
 
@@ -159,6 +163,42 @@ export const campaigns: Campaign[] = [
     bodyPreview: "$29.95 synthetic oil change this month — show this text at write-up.",
     createdAt: "2026-04-05T12:00:00Z",
     scheduledAt: "2026-04-05T13:00:00Z",
+    sentAt: null,
+  },
+  {
+    id: "camp-7",
+    name: "AI voice re-engage — cold leads",
+    segmentId: "seg-cold-leads",
+    segmentLabel: "Cold leads (14+ days)",
+    recipientCount: 56,
+    channels: ["voice"],
+    status: "sent",
+    subject: null,
+    bodyPreview:
+      "Hi {{firstName}}, this is Sunrise Honda calling about your recent vehicle inquiry. If now isn’t a good time, I can text you a link to pick a better time — otherwise I can answer quick questions or connect you with a specialist.",
+    createdAt: "2026-04-09T14:00:00Z",
+    scheduledAt: "2026-04-09T15:00:00Z",
+    sentAt: "2026-04-09T15:02:00Z",
+    metrics: {
+      delivered: 56,
+      answered: 31,
+      voicemail: 18,
+      failed: 7,
+    },
+  },
+  {
+    id: "camp-8",
+    name: "Equity owners: SMS + voice follow-up",
+    segmentId: "seg-equity-positive",
+    segmentLabel: "Positive equity owners",
+    recipientCount: 120,
+    channels: ["sms", "voice"],
+    status: "scheduled",
+    subject: null,
+    bodyPreview:
+      "SMS: Quick note — we may have a strong offer on your current vehicle. Voice: If we reach you by phone, AI introduces the upgrade event and offers to transfer to a manager.",
+    createdAt: "2026-04-11T10:00:00Z",
+    scheduledAt: "2026-04-14T11:00:00Z",
     sentAt: null,
   },
 ];

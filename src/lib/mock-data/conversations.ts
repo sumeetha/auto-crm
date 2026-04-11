@@ -28,7 +28,9 @@ export type Conversation = {
   customerId?: string | null;
   leadId: string;
   leadName: string;
-  channel: "sms" | "email" | "chat";
+  channel: "sms" | "email" | "chat" | "voice";
+  /** Set when `channel === "voice"` (inbound vs outbound dial). */
+  callDirection?: "inbound" | "outbound";
   status:
     | "ai-handling"
     | "needs-review"
@@ -959,5 +961,193 @@ export const conversations: Conversation[] = [
     unreadCount: 1,
     lastMessageAt: "2026-04-06T14:22:00Z",
     createdAt: "2026-04-06T14:10:00Z",
+  },
+
+  // Voice — inbound: AI qualifies, escalates to human
+  {
+    id: "conv-voice-inbound",
+    leadId: "lead-6",
+    leadName: "Priya Sharma",
+    channel: "voice",
+    callDirection: "inbound",
+    status: "human-active",
+    assignedUserId: "user-2",
+    messages: [
+      {
+        id: "msg-vin-1",
+        sender: "customer",
+        senderName: "Priya Sharma",
+        content:
+          "[Call connected] Hi, I submitted a form about the Accord Sport Hybrid — can someone tell me if you have it in stock and what lease payments look like?",
+        timestamp: "2026-04-11T08:02:00Z",
+      },
+      {
+        id: "msg-vin-2",
+        sender: "ai-agent",
+        senderName: "Sunrise AI",
+        content:
+          "Thanks for calling Sunrise Honda — I can help with that. We do have Accord Sport Hybrid inventory, and lease offers depend on term and mileage. Are you looking at 36 months and about 12,000 miles a year?",
+        timestamp: "2026-04-11T08:02:18Z",
+        confidence: 0.94,
+      },
+      {
+        id: "msg-vin-3",
+        sender: "customer",
+        senderName: "Priya Sharma",
+        content:
+          "Yes, 36/12 is fine. I need to stay around three-fifty a month if possible.",
+        timestamp: "2026-04-11T08:02:45Z",
+      },
+      {
+        id: "msg-vin-4",
+        sender: "ai-agent",
+        senderName: "Sunrise AI",
+        content:
+          "Got it — I’ll note a target around $350 per month. One quick question: do you have a trade-in, and have you already spoken with us about credit or a co-signer?",
+        timestamp: "2026-04-11T08:03:05Z",
+        confidence: 0.88,
+      },
+      {
+        id: "msg-vin-5",
+        sender: "customer",
+        senderName: "Priya Sharma",
+        content:
+          "I have a 2019 Elantra to trade, and I’d rather talk to a person about financing — it’s a bit complicated.",
+        timestamp: "2026-04-11T08:03:28Z",
+      },
+      {
+        id: "msg-vin-6",
+        sender: "ai-agent",
+        senderName: "Sunrise AI",
+        content:
+          "Understood — I’m connecting you with a product specialist now who can review trade value and financing options with you. Please hold for just a moment.",
+        timestamp: "2026-04-11T08:03:40Z",
+        confidence: 0.91,
+      },
+      {
+        id: "msg-vin-7",
+        sender: "human-agent",
+        senderName: "Alex Rivera",
+        content:
+          "Hi Priya, this is Alex at Sunrise Honda. I see the Accord Sport Hybrid and your Elantra trade — let’s walk through real numbers and see what fits your budget.",
+        timestamp: "2026-04-11T08:04:05Z",
+      },
+    ],
+    summary: {
+      aiSummary:
+        "Inbound voice call: Priya Sharma inquiring on Accord Sport Hybrid lease (~$350/mo target) with 2019 Elantra trade; AI qualified basics then escalated for financing/trade complexity.",
+      smartTags: ["conquest", "high-intent", "trade-in"],
+      leadScore: 74,
+      scoreFactors: [
+        "Clear vehicle and payment target",
+        "Trade-in disclosed",
+        "Requested human for financing",
+      ],
+      qualificationData: {
+        budget: "~$350/mo lease",
+        vehiclePreference: "Accord Sport Hybrid",
+        tradeIn: "2019 Hyundai Elantra",
+      },
+      suggestedActions: [
+        "Send lease worksheet after call",
+        "Appraise trade when she arrives",
+      ],
+    },
+    unreadCount: 0,
+    lastMessageAt: "2026-04-11T08:04:05Z",
+    createdAt: "2026-04-11T08:02:00Z",
+  },
+
+  // Voice — outbound: rep dialed; AI handled intro then customer engaged
+  {
+    id: "conv-voice-outbound",
+    leadId: "lead-4",
+    leadName: "Amanda Foster",
+    channel: "voice",
+    callDirection: "outbound",
+    status: "closed",
+    assignedUserId: "user-2",
+    messages: [
+      {
+        id: "msg-vout-1",
+        sender: "human-agent",
+        senderName: "System",
+        content:
+          "Outbound call placed from dialer — connected to Amanda Foster.",
+        timestamp: "2026-04-10T15:00:00Z",
+      },
+      {
+        id: "msg-vout-2",
+        sender: "ai-agent",
+        senderName: "Sunrise AI",
+        content:
+          "Hi Amanda, this is Sunrise Honda following up on your interest in the Civic Sport. Do you have a quick minute?",
+        timestamp: "2026-04-10T15:00:12Z",
+        confidence: 0.96,
+      },
+      {
+        id: "msg-vout-3",
+        sender: "customer",
+        senderName: "Amanda Foster",
+        content: "Yeah, I can talk. I was worried about payment — my credit isn’t perfect.",
+        timestamp: "2026-04-10T15:00:28Z",
+      },
+      {
+        id: "msg-vout-4",
+        sender: "ai-agent",
+        senderName: "Sunrise AI",
+        content:
+          "Thanks for saying that — many customers feel the same. We work with several lenders and can review options without any pressure. Would you like to come in for a quick test drive this week?",
+        timestamp: "2026-04-10T15:00:48Z",
+        confidence: 0.89,
+      },
+      {
+        id: "msg-vout-5",
+        sender: "customer",
+        senderName: "Amanda Foster",
+        content:
+          "Maybe Thursday after 5 — but I want to speak to someone about financing before I commit to anything.",
+        timestamp: "2026-04-10T15:01:10Z",
+      },
+      {
+        id: "msg-vout-6",
+        sender: "ai-agent",
+        senderName: "Sunrise AI",
+        content:
+          "Thursday after 5 works — I’ll have Alex Rivera reach out to coordinate a time and answer financing questions. Is the number we’re calling the best one to text a confirmation?",
+        timestamp: "2026-04-10T15:01:28Z",
+        confidence: 0.92,
+      },
+      {
+        id: "msg-vout-7",
+        sender: "customer",
+        senderName: "Amanda Foster",
+        content: "Yes, text is fine. Thanks.",
+        timestamp: "2026-04-10T15:01:40Z",
+      },
+    ],
+    summary: {
+      aiSummary:
+        "Outbound voice: Amanda Foster (first-time buyer, credit concern) agreed to Thursday-after-5 visit; AI scheduled handoff to Alex for financing discussion; confirmation via text.",
+      smartTags: ["first-time-buyer", "credit-concern", "high-intent"],
+      leadScore: 68,
+      scoreFactors: [
+        "Accepted callback window",
+        "Financing help requested",
+        "Positive close on next step",
+      ],
+      qualificationData: {
+        timeline: "Thursday after 5 PM",
+        vehiclePreference: "Civic Sport",
+        creditRange: "Concerned — human follow-up",
+      },
+      suggestedActions: [
+        "Alex to confirm Thursday slot and pre-qual options",
+        "Send SMS confirmation to mobile on file",
+      ],
+    },
+    unreadCount: 0,
+    lastMessageAt: "2026-04-10T15:01:40Z",
+    createdAt: "2026-04-10T15:00:00Z",
   },
 ];

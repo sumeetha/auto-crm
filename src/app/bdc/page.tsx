@@ -14,11 +14,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { MultiSelectFilter } from "@/components/shared/multi-select-filter";
 import { CollapsibleFilterPanel } from "@/components/shared/collapsible-filter-panel";
+import { VoiceDialerBar } from "@/components/bdc/voice-dialer-bar";
 import {
   Search,
   MessageSquare,
   Mail,
   Globe,
+  PhoneCall,
   Bot,
   User,
   Sparkles,
@@ -45,6 +47,7 @@ const channelIcons: Record<string, React.ElementType> = {
   sms: MessageSquare,
   email: Mail,
   chat: Globe,
+  voice: PhoneCall,
 };
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -59,7 +62,21 @@ const CHANNEL_OPTIONS = [
   { value: "sms", label: "SMS" },
   { value: "email", label: "Email" },
   { value: "chat", label: "Chat" },
+  { value: "voice", label: "Voice" },
 ] as const;
+
+function channelDisplayLabel(channel: Conversation["channel"]): string {
+  switch (channel) {
+    case "sms":
+      return "SMS";
+    case "email":
+      return "Email";
+    case "chat":
+      return "Chat";
+    case "voice":
+      return "Voice";
+  }
+}
 
 const STATUS_FILTERS = [
   { key: "ai-handling", label: "AI Handling" },
@@ -304,6 +321,7 @@ function ConversationList({
                   ))}
                 </div>
                 <p className="truncate text-xs text-muted-foreground">
+                  {conv.channel === "voice" ? "Transcript · " : ""}
                   {lastMsg?.sender === "customer" ? "" : lastMsg?.sender === "ai-agent" ? "AI: " : "Agent: "}
                   {lastMsg?.content.slice(0, 80)}
                 </p>
@@ -330,6 +348,8 @@ function ConversationThread({ conversation }: { conversation: Conversation }) {
   const assignedUser = conversation.assignedUserId
     ? users.find((u) => u.id === conversation.assignedUserId)
     : null;
+  const lead = leads.find((l) => l.id === conversation.leadId);
+  const phoneDisplay = lead?.phone ?? "—";
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -345,7 +365,7 @@ function ConversationThread({ conversation }: { conversation: Conversation }) {
             </AvatarFallback>
           </Avatar>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-semibold">
                 {conversation.leadName}
               </span>
@@ -355,12 +375,23 @@ function ConversationThread({ conversation }: { conversation: Conversation }) {
               >
                 {status.label}
               </Badge>
+              {conversation.channel === "voice" &&
+                conversation.callDirection && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-normal text-muted-foreground"
+                  >
+                    {conversation.callDirection === "inbound"
+                      ? "Inbound"
+                      : "Outbound"}
+                  </Badge>
+                )}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Phone className="h-3 w-3" />
-              <span>(555) 312-8844</span>
+              <span>{phoneDisplay}</span>
               <span>·</span>
-              <span className="capitalize">{conversation.channel}</span>
+              <span>{channelDisplayLabel(conversation.channel)}</span>
               {assignedUser && (
                 <>
                   <span>·</span>
@@ -404,29 +435,33 @@ function ConversationThread({ conversation }: { conversation: Conversation }) {
         </div>
       </ScrollArea>
 
-      {/* Compose Bar */}
+      {/* Compose / voice dialer */}
       <div className="shrink-0 border-t bg-card p-3">
-        <div className="mx-auto flex max-w-2xl items-center gap-2">
-          <Button variant="ghost" size="icon" className="shrink-0">
-            <Paperclip className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Input
-            placeholder="Type a message..."
-            className="flex-1 text-sm"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            className="shrink-0 gap-1.5 border-violet-200 text-violet-600 hover:bg-violet-50"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            AI Suggest
-          </Button>
-          <Button size="sm" className="shrink-0 gap-1.5">
-            <Send className="h-3.5 w-3.5" />
-            Send
-          </Button>
-        </div>
+        {conversation.channel === "voice" ? (
+          <VoiceDialerBar initialNumber={phoneDisplay === "—" ? "" : phoneDisplay} />
+        ) : (
+          <div className="mx-auto flex max-w-2xl items-center gap-2">
+            <Button variant="ghost" size="icon" className="shrink-0">
+              <Paperclip className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <Input
+              placeholder="Type a message..."
+              className="flex-1 text-sm"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-1.5 border-violet-200 text-violet-600 hover:bg-violet-50"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              AI Suggest
+            </Button>
+            <Button size="sm" className="shrink-0 gap-1.5">
+              <Send className="h-3.5 w-3.5" />
+              Send
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

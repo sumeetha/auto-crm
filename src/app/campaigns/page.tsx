@@ -34,6 +34,7 @@ import {
   Sparkles,
   MessageSquare,
   Mail,
+  PhoneCall,
 } from "lucide-react";
 
 const STATUS_OPTIONS: { value: CampaignStatus; label: string }[] = [
@@ -48,7 +49,19 @@ const STATUS_OPTIONS: { value: CampaignStatus; label: string }[] = [
 const CHANNEL_OPTIONS: { value: CampaignChannel; label: string }[] = [
   { value: "sms", label: "SMS" },
   { value: "email", label: "Email" },
+  { value: "voice", label: "Voice" },
 ];
+
+function ChannelBadgeIcon({ channel }: { channel: CampaignChannel }) {
+  if (channel === "sms") return <MessageSquare className="size-3" />;
+  if (channel === "email") return <Mail className="size-3" />;
+  return <PhoneCall className="size-3" />;
+}
+
+function channelBadgeLabel(channel: CampaignChannel): string {
+  if (channel === "voice") return "Voice";
+  return channel.toUpperCase();
+}
 
 const statusStyles: Record<
   CampaignStatus,
@@ -85,6 +98,10 @@ function CampaignComplianceBanner() {
             <li>Consent and opt-out flags respected per recipient record</li>
             <li>Quiet hours and frequency caps enforced by policy engine</li>
             <li>Human review required for certain templates (dealer-configurable)</li>
+            <li>
+              Voice: calling consent, DNC / internal do-not-call lists, and
+              permissible hours checked before dial (mock checklist)
+            </li>
           </ul>
         </div>
       </div>
@@ -148,8 +165,8 @@ export default function CampaignsPage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Campaigns</h1>
             <p className="text-sm text-muted-foreground">
-              Segment customers and leads; send now or schedule SMS / email
-              broadcasts.
+              Segment customers and leads; send now or schedule SMS, email, and
+              voice broadcasts.
             </p>
           </div>
         </div>
@@ -236,12 +253,8 @@ export default function CampaignsPage() {
                         variant="secondary"
                         className="gap-0.5 text-[10px] font-normal"
                       >
-                        {ch === "sms" ? (
-                          <MessageSquare className="size-3" />
-                        ) : (
-                          <Mail className="size-3" />
-                        )}
-                        {ch.toUpperCase()}
+                        <ChannelBadgeIcon channel={ch} />
+                        {channelBadgeLabel(ch)}
                       </Badge>
                     ))}
                   </div>
@@ -297,8 +310,13 @@ export default function CampaignsPage() {
                     {statusStyles[detail.status].label}
                   </Badge>
                   {detail.channels.map((ch) => (
-                    <Badge key={ch} variant="outline" className="text-xs">
-                      {ch.toUpperCase()}
+                    <Badge
+                      key={ch}
+                      variant="outline"
+                      className="gap-1 text-xs font-normal"
+                    >
+                      <ChannelBadgeIcon channel={ch} />
+                      {channelBadgeLabel(ch)}
                     </Badge>
                   ))}
                 </div>
@@ -312,7 +330,9 @@ export default function CampaignsPage() {
                 )}
                 <div>
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Body preview
+                    {detail.channels.includes("voice")
+                      ? "Script / body preview"
+                      : "Body preview"}
                   </p>
                   <p className="text-sm leading-relaxed text-foreground/90">
                     {detail.bodyPreview}
@@ -324,30 +344,83 @@ export default function CampaignsPage() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <p className="text-[10px] text-muted-foreground">
-                          Delivered
+                          {detail.channels.length === 1 &&
+                          detail.channels[0] === "voice"
+                            ? "Dialed"
+                            : "Delivered"}
                         </p>
                         <p className="font-medium">
                           {detail.metrics.delivered}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">
-                          Opened
-                        </p>
-                        <p className="font-medium">{detail.metrics.opened}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">
-                          Clicked
-                        </p>
-                        <p className="font-medium">{detail.metrics.clicked}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">
-                          Replied
-                        </p>
-                        <p className="font-medium">{detail.metrics.replied}</p>
-                      </div>
+                      {(detail.metrics.answered != null ||
+                        detail.metrics.voicemail != null ||
+                        detail.metrics.failed != null) && (
+                        <>
+                          {detail.metrics.answered != null && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">
+                                Answered live
+                              </p>
+                              <p className="font-medium">
+                                {detail.metrics.answered}
+                              </p>
+                            </div>
+                          )}
+                          {detail.metrics.voicemail != null && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">
+                                Voicemail
+                              </p>
+                              <p className="font-medium">
+                                {detail.metrics.voicemail}
+                              </p>
+                            </div>
+                          )}
+                          {detail.metrics.failed != null && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">
+                                Failed / no answer
+                              </p>
+                              <p className="font-medium">
+                                {detail.metrics.failed}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {detail.metrics.opened != null && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">
+                            Opened
+                          </p>
+                          <p className="font-medium">{detail.metrics.opened}</p>
+                        </div>
+                      )}
+                      {detail.metrics.clicked != null && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">
+                            Clicked
+                          </p>
+                          <p className="font-medium">{detail.metrics.clicked}</p>
+                        </div>
+                      )}
+                      {detail.metrics.replied != null && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">
+                            Replied
+                          </p>
+                          <p className="font-medium">{detail.metrics.replied}</p>
+                        </div>
+                      )}
+                      {detail.metrics.bounced != null && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">
+                            Bounced
+                          </p>
+                          <p className="font-medium">{detail.metrics.bounced}</p>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 )}
@@ -397,7 +470,7 @@ export default function CampaignsPage() {
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium">Channels</p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {CHANNEL_OPTIONS.map(({ value, label }) => (
                   <Button
                     key={value}
@@ -424,12 +497,23 @@ export default function CampaignsPage() {
               </div>
             )}
             <div className="space-y-1">
-              <p className="text-xs font-medium">Message</p>
+              <p className="text-xs font-medium">
+                {draftChannels.includes("voice") &&
+                draftChannels.some((c) => c === "sms" || c === "email")
+                  ? "Message & voice script"
+                  : draftChannels.includes("voice")
+                    ? "Call script / AI voice prompt"
+                    : "Message"}
+              </p>
               <Textarea
                 rows={5}
                 value={draftBody}
                 onChange={(e) => setDraftBody(e.target.value)}
-                placeholder="Write your message. Merge fields: {{firstName}}, {{dealerName}}"
+                placeholder={
+                  draftChannels.includes("voice")
+                    ? "Spoken script and merge fields: {{firstName}}, {{dealerName}} — AI uses this on outbound voice; pair with SMS/email copy above when both are selected."
+                    : "Write your message. Merge fields: {{firstName}}, {{dealerName}}"
+                }
               />
             </div>
             <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">

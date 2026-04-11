@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description: "AI-native CRM layer for automotive dealerships",
   icons: {
     icon: "/brand/autocrm-logo.png",
+    apple: "/brand/autocrm-logo.png",
   },
 };
 
