@@ -143,14 +143,20 @@ export function Sidebar() {
                           nativeButton={false}
                           delay={200}
                           render={(props) => {
-                            const { nativeButton: _nb, ...linkProps } = props;
+                            const {
+                              className: triggerClassName,
+                              nativeButton: _omitNativeButton,
+                              ...rest
+                            } = props as typeof props & {
+                              nativeButton?: boolean;
+                            };
                             return (
                               <Link
-                                {...linkProps}
+                                {...rest}
                                 href={item.href}
                                 className={cn(
                                   linkClassName,
-                                  linkProps.className,
+                                  triggerClassName,
                                 )}
                               >
                                 {linkBody}
