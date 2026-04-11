@@ -114,20 +114,17 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => onCollapsedChange(!collapsed)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="shrink-0 rounded-lg p-2 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
-        >
-          <ChevronLeft
-            className={cn(
-              "h-4 w-4 transition-transform duration-200",
-              collapsed && "rotate-180",
-            )}
-          />
-        </button>
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={() => onCollapsedChange(true)}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+            className="shrink-0 rounded-lg p-2 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 transition-transform duration-200" />
+          </button>
+        )}
       </div>
 
       <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
