@@ -72,27 +72,62 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
         collapsed ? "w-[68px]" : "w-[240px]"
       )}
     >
-      <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-        <div className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg ring-1 ring-sidebar-border/60">
-          <Image
-            src="/brand/autocrm-logo.png"
-            alt="AutoCRM"
-            width={32}
-            height={32}
-            className="h-full w-full object-cover"
-            priority
-          />
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-sidebar-border px-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {collapsed ? (
+            <button
+              type="button"
+              onClick={() => onCollapsedChange(false)}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+              className="relative flex h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded-lg ring-1 ring-sidebar-border/60 transition-colors hover:bg-sidebar-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-foreground/25"
+            >
+              <Image
+                src="/brand/autocrm-logo.png"
+                alt=""
+                width={32}
+                height={32}
+                className="h-full w-full object-cover"
+                priority
+              />
+            </button>
+          ) : (
+            <div className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg ring-1 ring-sidebar-border/60">
+              <Image
+                src="/brand/autocrm-logo.png"
+                alt="AutoCRM"
+                width={32}
+                height={32}
+                className="h-full w-full object-cover"
+                priority
+              />
+            </div>
+          )}
+          {!collapsed && (
+            <div className="min-w-0 flex flex-col">
+              <span className="truncate text-sm font-semibold tracking-tight text-sidebar-accent-foreground">
+                AutoCRM
+              </span>
+              <span className="text-[10px] text-sidebar-foreground/50">
+                AI-Powered
+              </span>
+            </div>
+          )}
         </div>
-        {!collapsed && (
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold tracking-tight text-sidebar-accent-foreground">
-              AutoCRM
-            </span>
-            <span className="text-[10px] text-sidebar-foreground/50">
-              AI-Powered
-            </span>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={() => onCollapsedChange(!collapsed)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="shrink-0 rounded-lg p-2 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+        >
+          <ChevronLeft
+            className={cn(
+              "h-4 w-4 transition-transform duration-200",
+              collapsed && "rotate-180",
+            )}
+          />
+        </button>
       </div>
 
       <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-4">
