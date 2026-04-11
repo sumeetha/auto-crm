@@ -20,7 +20,6 @@ import {
   GitBranch,
   Bot,
 } from "lucide-react";
-import { useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -58,9 +57,13 @@ const navGroups = [
   },
 ];
 
-export function Sidebar() {
+type SidebarProps = {
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+};
+
+export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <aside
@@ -184,7 +187,7 @@ export function Sidebar() {
       <div className="border-t border-sidebar-border p-3">
         <button
           type="button"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => onCollapsedChange(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="flex w-full items-center justify-end rounded-lg p-2 pr-2.5 text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
         >

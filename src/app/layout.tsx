@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
+import { AppShell } from "@/components/layout/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
@@ -24,11 +23,7 @@ export default function RootLayout({
     >
       <body className="h-full bg-background text-foreground">
         <TooltipProvider>
-          <Sidebar />
-          <div className="flex h-full min-h-0 flex-col pl-[240px]">
-            <Topbar />
-            <main className="min-h-0 flex-1 overflow-auto">{children}</main>
-          </div>
+          <AppShell>{children}</AppShell>
         </TooltipProvider>
       </body>
     </html>
