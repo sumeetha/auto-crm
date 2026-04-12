@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: "AutoCRM — AI-Powered Automotive CRM",
@@ -26,6 +27,7 @@ export default function RootLayout({
         <TooltipProvider>
           <AppShell>{children}</AppShell>
         </TooltipProvider>
+        <Analytics />
       </body>
     </html>
   );
